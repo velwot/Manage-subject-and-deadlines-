@@ -1,0 +1,6 @@
+{
+  "name": "CampusMate",
+  "description": "Student academic companion for subjects, chapter-wise class notes (PDFs & photos), notices, alerts, and calendar countdowns.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
