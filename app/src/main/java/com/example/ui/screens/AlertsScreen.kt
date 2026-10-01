@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.Alert
 import com.example.ui.components.ConfirmDialog
+import com.example.ui.components.CreateAlertDialog
 import com.example.ui.viewmodel.CampusMateViewModel
 import com.example.util.DateUtils
 
@@ -28,6 +29,7 @@ fun AlertsScreen(
     viewModel: CampusMateViewModel
 ) {
     val alerts by viewModel.alerts.collectAsStateWithLifecycle()
+    val subjects by viewModel.subjects.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var alertToDelete by remember { mutableStateOf<Alert?>(null) }
     var filterPendingOnly by remember { mutableStateOf(false) }
@@ -41,10 +43,20 @@ fun AlertsScreen(
             TopAppBar(
                 title = { Text("Alerts & Deadlines", fontWeight = FontWeight.Bold) },
                 actions = {
+                    FilledTonalButton(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier
+                            .padding(end = 6.dp)
+                            .testTag("top_bar_create_alert_btn")
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Create Alert", fontSize = 13.sp)
+                    }
                     FilterChip(
                         selected = filterPendingOnly,
                         onClick = { filterPendingOnly = !filterPendingOnly },
-                        label = { Text("Pending Only", fontSize = 12.sp) },
+                        label = { Text("Pending", fontSize = 12.sp) },
                         modifier = Modifier.padding(end = 12.dp)
                     )
                 }
@@ -54,7 +66,7 @@ fun AlertsScreen(
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add Alert") },
+                text = { Text("Create Alert") },
                 modifier = Modifier.testTag("fab_add_alert")
             )
         }
@@ -86,6 +98,15 @@ fun AlertsScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Button(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier.testTag("empty_create_alert_btn")
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Create Alert")
+                    }
                 }
             }
         } else {
@@ -110,96 +131,11 @@ fun AlertsScreen(
     }
 
     if (showAddDialog) {
-        var title by remember { mutableStateOf("") }
-        var subjectName by remember { mutableStateOf("") }
-        var dueDate by remember { mutableStateOf(DateUtils.getCurrentIsoDate()) }
-        var dueTime by remember { mutableStateOf("23:59") }
-        var type by remember { mutableStateOf("Assignment") }
-        var priority by remember { mutableStateOf("High") }
-        var notes by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Alert / Deadline", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Alert Title *") },
-                        placeholder = { Text("e.g. Lab 2 Semaphore Submission") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("input_alert_title"),
-                        singleLine = true
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = subjectName,
-                        onValueChange = { subjectName = it },
-                        label = { Text("Subject (Optional)") },
-                        placeholder = { Text("e.g. Operating Systems") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        OutlinedTextField(
-                            value = dueDate,
-                            onValueChange = { dueDate = it },
-                            label = { Text("Due Date (YYYY-MM-DD)") },
-                            modifier = Modifier.weight(1.5f),
-                            singleLine = true
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        OutlinedTextField(
-                            value = dueTime,
-                            onValueChange = { dueTime = it },
-                            label = { Text("Time") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf("Assignment", "Quiz", "Exam", "Lab").forEach { t ->
-                            FilterChip(
-                                selected = type == t,
-                                onClick = { type = t },
-                                label = { Text(t, fontSize = 11.sp) }
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Notes / Submission Link") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 2
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (title.isNotBlank()) {
-                            viewModel.addAlert(title, subjectName, dueDate, dueTime, type, priority, notes)
-                            showAddDialog = false
-                        }
-                    },
-                    modifier = Modifier.testTag("btn_confirm_alert")
-                ) {
-                    Text("Add Alert")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showAddDialog = false }) {
-                    Text("Cancel")
-                }
+        CreateAlertDialog(
+            subjects = subjects,
+            onDismiss = { showAddDialog = false },
+            onConfirm = { title, subjectName, dueDate, dueTime, type, priority, notes ->
+                viewModel.addAlert(title, subjectName, dueDate, dueTime, type, priority, notes)
             }
         )
     }

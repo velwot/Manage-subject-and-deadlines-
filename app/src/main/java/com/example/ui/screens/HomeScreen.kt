@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.Subject
+import com.example.ui.components.CreateAlertDialog
+import com.example.ui.components.CreateCountdownDialog
 import com.example.ui.viewmodel.CampusMateViewModel
 import com.example.ui.viewmodel.Screen
 import com.example.ui.viewmodel.SubjectTab
@@ -45,6 +47,8 @@ fun HomeScreen(
     val todoTasks by viewModel.todoTasks.collectAsStateWithLifecycle()
 
     var showAddSubjectDialog by remember { mutableStateOf(false) }
+    var showAddEventDialog by remember { mutableStateOf(false) }
+    var showAddAlertDialog by remember { mutableStateOf(false) }
 
     val pendingAlerts = alerts.filter { !it.isCompleted }.take(3)
     val pendingTasks = todoTasks.filter { !it.isCompleted }.take(4)
@@ -103,7 +107,45 @@ fun HomeScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Next Exam / Countdown Banner
+            // Exam & Event Countdowns Section
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Exam & Event Countdowns",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (events.isNotEmpty()) "${events.size} event(s) tracked" else "Days remaining tracker",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        FilledTonalButton(
+                            onClick = { showAddEventDialog = true },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("home_create_countdown_btn")
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Create Countdown", fontSize = 12.sp)
+                        }
+                        if (events.isNotEmpty()) {
+                            TextButton(onClick = { onNavigate(Screen.Calendar) }) {
+                                Text("All", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Next Exam / Countdown Banner or Empty Prompt
             if (nextEvent != null) {
                 item {
                     val days = DateUtils.getDaysRemaining(nextEvent.targetDate)
@@ -162,6 +204,52 @@ fun HomeScreen(
                                         style = MaterialTheme.typography.labelSmall
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+            } else {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showAddEventDialog = true },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.HourglassEmpty,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "No countdowns active",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Set a target date for exams, milestones, or project demos.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Button(
+                                onClick = { showAddEventDialog = true },
+                                modifier = Modifier.testTag("empty_home_create_countdown_btn")
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Create Countdown")
                             }
                         }
                     }
@@ -366,24 +454,80 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Upcoming Deadlines & Alerts",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    TextButton(onClick = { onNavigate(Screen.Alerts) }) {
-                        Text("All Alerts")
+                    Column {
+                        Text(
+                            text = "Upcoming Deadlines & Alerts",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Exams, quizzes, assignments & lab submissions",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        FilledTonalButton(
+                            onClick = { showAddAlertDialog = true },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("home_create_alert_btn")
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Create Alert", fontSize = 12.sp)
+                        }
+                        TextButton(onClick = { onNavigate(Screen.Alerts) }) {
+                            Text("All", fontSize = 12.sp)
+                        }
                     }
                 }
             }
 
             if (pendingAlerts.isEmpty()) {
                 item {
-                    Text(
-                        text = "No pending deadlines or tasks. You are all caught up!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showAddAlertDialog = true },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsNone,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "No pending alerts or submissions",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Add reminders for assignment submissions and quizzes.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Button(
+                                onClick = { showAddAlertDialog = true },
+                                modifier = Modifier.testTag("empty_home_create_alert_btn")
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Create Alert")
+                            }
+                        }
+                    }
                 }
             } else {
                 items(pendingAlerts, key = { "home_alert_${it.id}" }) { alert ->
@@ -454,6 +598,25 @@ fun HomeScreen(
             onConfirm = { name, code, prof, room, color, schedule ->
                 viewModel.addSubject(name, code, prof, room, color, schedule)
                 showAddSubjectDialog = false
+            }
+        )
+    }
+
+    if (showAddEventDialog) {
+        CreateCountdownDialog(
+            onDismiss = { showAddEventDialog = false },
+            onConfirm = { title, targetDate, category, notes ->
+                viewModel.addEvent(title, targetDate, category, notes)
+            }
+        )
+    }
+
+    if (showAddAlertDialog) {
+        CreateAlertDialog(
+            subjects = subjects,
+            onDismiss = { showAddAlertDialog = false },
+            onConfirm = { title, subjectName, dueDate, dueTime, type, priority, notes ->
+                viewModel.addAlert(title, subjectName, dueDate, dueTime, type, priority, notes)
             }
         )
     }

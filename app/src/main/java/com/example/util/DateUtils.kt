@@ -20,6 +20,12 @@ object DateUtils {
         return isoDateFormat.format(Date())
     }
 
+    fun getIsoDatePlusDays(days: Int): String {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DAY_OF_YEAR, days)
+        return isoDateFormat.format(cal.time)
+    }
+
     fun formatDisplayDate(timestamp: Long): String {
         return displayDateFormat.format(Date(timestamp))
     }

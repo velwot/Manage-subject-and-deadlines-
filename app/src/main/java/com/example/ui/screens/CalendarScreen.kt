@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.CalendarEvent
 import com.example.ui.components.ConfirmDialog
+import com.example.ui.components.CreateCountdownDialog
 import com.example.ui.viewmodel.CampusMateViewModel
 import com.example.util.DateUtils
 
@@ -32,14 +33,26 @@ fun CalendarScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Calendar & Countdowns", fontWeight = FontWeight.Bold) }
+                title = { Text("Calendar & Countdowns", fontWeight = FontWeight.Bold) },
+                actions = {
+                    FilledTonalButton(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier
+                            .padding(end = 12.dp)
+                            .testTag("top_bar_create_countdown_btn")
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Create Countdown", fontSize = 13.sp)
+                    }
+                }
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Add Countdown") },
+                text = { Text("Create Countdown") },
                 modifier = Modifier.testTag("fab_add_event")
             )
         }
@@ -71,6 +84,15 @@ fun CalendarScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Button(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier.testTag("empty_create_countdown_btn")
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Create Countdown")
+                    }
                 }
             }
         } else {
@@ -158,74 +180,10 @@ fun CalendarScreen(
     }
 
     if (showAddDialog) {
-        var title by remember { mutableStateOf("") }
-        var targetDate by remember { mutableStateOf(DateUtils.getCurrentIsoDate()) }
-        var category by remember { mutableStateOf("Exam") }
-        var notes by remember { mutableStateOf("") }
-
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Add Countdown Event", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("Event Title *") },
-                        placeholder = { Text("e.g. Midterm Exams") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("input_event_title"),
-                        singleLine = true
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = targetDate,
-                        onValueChange = { targetDate = it },
-                        label = { Text("Target Date (YYYY-MM-DD)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf("Exam", "Milestone", "Holiday", "Deadline").forEach { c ->
-                            FilterChip(
-                                selected = category == c,
-                                onClick = { category = c },
-                                label = { Text(c, fontSize = 11.sp) }
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Notes (Optional)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 2
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (title.isNotBlank()) {
-                            viewModel.addEvent(title, targetDate, category, notes)
-                            showAddDialog = false
-                        }
-                    },
-                    modifier = Modifier.testTag("btn_confirm_event")
-                ) {
-                    Text("Add Countdown")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showAddDialog = false }) {
-                    Text("Cancel")
-                }
+        CreateCountdownDialog(
+            onDismiss = { showAddDialog = false },
+            onConfirm = { title, targetDate, category, notes ->
+                viewModel.addEvent(title, targetDate, category, notes)
             }
         )
     }
